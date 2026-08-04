@@ -1,14 +1,15 @@
 # 🧹 Discord Chore Bot
 
-A self-hosted Discord bot that DMs you scheduled chore reminders with **✅ Done** / **❌ Not yet** buttons. It keeps nagging (every hour) until you click a button — done gets you a "Great job!" message, and "Not yet" snoozes it for 3 hours. Quiet hours keep it from pinging you overnight.
+A self-hosted Discord bot that DMs you scheduled chore reminders with **Done** / **Not yet** buttons (1-hour and 3-hour snooze options). It keeps nagging (every hour) until you click a button — done gets you a "Great job!" message, and "Not yet" snoozes it. Quiet hours keep it from pinging you overnight.
 
 ## How it works
 
 - Each chore in `chores.js` repeats weekly on a given day + time.
-- When it's due, the bot DMs you: `🗑️ Don't forget: take out the trash and recycling!` with two buttons.
+- When it's due, the bot DMs you: `🗑️ Don't forget: take out the trash and recycling!` with three buttons.
 - **No interaction** → re-reminded every `retryIntervalHours` (default 1 hour).
-- **✅ Done** → the message turns into `🎉 Great job for doing put out the trash and recycling!` and reminders stop for the week.
-- **❌ Not yet** → snoozes reminders for `snoozeHours` (default 3 hours), then resumes hourly.
+- **Done** → the message turns into `🎉 Great job for doing put out the trash and recycling!` and reminders stop for the week.
+- **Not yet (remind in 1 hour)** → snoozes reminders for 1 hour.
+- **Not yet (remind me in 3 hours)** → snoozes reminders for 3 hours.
 - **Quiet hours** (`00:00`–`08:00` by default) → no reminder DMs are sent.
 - Every week starts fresh for every chore.
 
@@ -130,7 +131,7 @@ Open `chores.js`. Top-level settings:
 | `timezone` | `America/Denver` | IANA timezone for all times |
 | `quietHours` | `00:00`–`08:00` | No reminder DMs in this local window (`end` is exclusive) |
 | `retryIntervalHours` | `1` | Re-reminder interval when you don't click anything |
-| `snoozeHours` | `3` | How long **❌ Not yet** pauses reminders |
+| `snoozeHours` | `3` | Default snooze fallback; the buttons offer 1-hour and 3-hour snoozes |
 
 Each chore entry:
 

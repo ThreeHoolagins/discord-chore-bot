@@ -134,17 +134,25 @@ function saveState() {
 
 // ─── Reminders ──────────────────────────────────────────────────────────────
 
-function buildReminderRow(chore) {
-  return new ActionRowBuilder().addComponents(
+function buildChoreButtons(chore, prefix) {
+  return [
     new ButtonBuilder()
-      .setCustomId(`chore_${chore.id}_done`)
-      .setLabel('✅ Done')
+      .setCustomId(`${prefix}_${chore.id}_done`)
+      .setLabel('Done')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
-      .setCustomId(`chore_${chore.id}_snooze`)
-      .setLabel('❌ Not yet')
+      .setCustomId(`${prefix}_${chore.id}_snooze_1`)
+      .setLabel('Not yet (remind in 1 hour)')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`${prefix}_${chore.id}_snooze_3`)
+      .setLabel('Not yet (remind me in 3 hours)')
       .setStyle(ButtonStyle.Danger),
-  );
+  ];
+}
+
+function buildReminderRow(chore) {
+  return new ActionRowBuilder().addComponents(buildChoreButtons(chore, 'chore'));
 }
 
 async function sendReminder(chore, key) {
@@ -165,16 +173,7 @@ async function sendReminder(chore, key) {
 
 async function sendTestReminder(chore) {
   const user = await client.users.fetch(process.env.USER_ID);
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`test_${chore.id}_done`)
-      .setLabel('✅ Done')
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId(`test_${chore.id}_snooze`)
-      .setLabel('❌ Not yet')
-      .setStyle(ButtonStyle.Danger),
-  );
+  const row = new ActionRowBuilder().addComponents(buildChoreButtons(chore, 'test'));
   await user.send({ content: `🧪 Test reminder — ${chore.message}`, components: [row] });
 }
 
@@ -232,7 +231,7 @@ client.on('interactionCreate', async (interaction) => {
     return;
   }
 
-  const test = /^test_(.+)_(done|snooze)$/.exec(interaction.customId);
+  const test = /^test_.+_(done|snooze(?:_\d+)?)$/.exec(interaction.customId);
   if (test) {
     await interaction.update({
       content: `✨ Action successfully clicked — this was just a test, nothing was actually changed!`,
@@ -241,9 +240,9 @@ client.on('interactionCreate', async (interaction) => {
     return;
   }
 
-  const m = /^chore_(.+)_(done|snooze)$/.exec(interaction.customId);
+  const m = /^chore_(.+)_(done|snooze)(?:_(\d+))?$/.exec(interaction.customId);
   if (!m) return;
-  const [, id, action] = m;
+  const [, id, action, hoursStr] = m;
   const chore = CONFIG.chores.find((c) => c.id === id);
   if (!chore) return;
 
@@ -263,9 +262,10 @@ client.on('interactionCreate', async (interaction) => {
     }
     occ.messageIds = [interaction.message.id];
   } else {
-    occ.snoozedUntil = new Date(Date.now() + CONFIG.snoozeHours * 3600000).toISOString();
+    const hours = parseInt(hoursStr || CONFIG.snoozeHours, 10);
+    occ.snoozedUntil = new Date(Date.now() + hours * 3600000).toISOString();
     await interaction.reply({
-      content: `Got it — I'll remind you about "${chore.name}" again in ${CONFIG.snoozeHours} hours.`,
+      content: `Got it — I'll remind you about "${chore.name}" again in ${hours} hour${hours === 1 ? '' : 's'}.`,
       ephemeral: true,
     });
   }
