@@ -98,6 +98,14 @@ function formatTimestamp(date) {
   }).format(date);
 }
 
+// Convert "22:00" (config) to "10:00 PM"
+function formatTimeHHMM(hhmm) {
+  const [hh, mi] = hhmm.split(':').map(Number);
+  const suffix = hh >= 12 ? 'PM' : 'AM';
+  const h12 = hh % 12 || 12;
+  return `${h12}:${String(mi).padStart(2, '0')} ${suffix}`;
+}
+
 function isQuietHours(date) {
   const p = tzPartsOfEpoch(date);
   const mins = p.hour * 60 + p.minute;
@@ -233,7 +241,7 @@ client.on('messageCreate', async (message) => {
       else if (occ.snoozedUntil && new Date(occ.snoozedUntil) > new Date()) status = `snoozed until ${formatTimestamp(new Date(occ.snoozedUntil))}`;
       const due = choreTimeThisWeek(chore);
       const dueStr = due < new Date() ? 'past due' : formatTimestamp(due);
-      return `• ${chore.name} (${chore.day} ${chore.time}) — ${dueStr} — ${status}`;
+      return `• ${chore.name} (${chore.day} ${formatTimeHHMM(chore.time)}) — ${dueStr} — ${status}`;
     });
     await message.reply(lines.join('\n'));
   }
