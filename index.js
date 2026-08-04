@@ -134,9 +134,8 @@ function saveState() {
 
 // ─── Reminders ──────────────────────────────────────────────────────────────
 
-async function sendReminder(chore, key) {
-  const user = await client.users.fetch(process.env.USER_ID);
-  const row = new ActionRowBuilder().addComponents(
+function buildReminderRow(chore) {
+  return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`chore_${chore.id}_done`)
       .setLabel('✅ Done')
@@ -146,6 +145,11 @@ async function sendReminder(chore, key) {
       .setLabel('❌ Not yet')
       .setStyle(ButtonStyle.Danger),
   );
+}
+
+async function sendReminder(chore, key) {
+  const user = await client.users.fetch(process.env.USER_ID);
+  const row = buildReminderRow(chore);
 
   const msg = await user.send({ content: chore.message, components: [row] });
 
@@ -157,6 +161,11 @@ async function sendReminder(chore, key) {
   occ.messageIds.push(msg.id);
   state.occurrences[key] = occ;
   saveState();
+}
+
+async function sendTestReminder(chore) {
+  const user = await client.users.fetch(process.env.USER_ID);
+  await user.send({ content: `🧪 Test reminder — ${chore.message}`, components: [buildReminderRow(chore)] });
 }
 
 function tick() {
@@ -185,6 +194,31 @@ client.on('interactionCreate', async (interaction) => {
   if (!interaction.isButton()) return;
   if (interaction.user.id !== process.env.USER_ID) {
     await interaction.reply({ content: 'This isn\'t for you 😄', ephemeral: true });
+    return;
+  }
+
+  if (interaction.customId === 'clear_confirm') {
+    await interaction.deferUpdate();
+    const dm = interaction.channel;
+    let deleted = 0;
+    let beforeId;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const fetched = await dm.messages.fetch({ limit: 100, before: beforeId });
+      if (fetched.size === 0) break;
+      for (const m of fetched.filter((msg) => msg.author.id === client.user.id).values()) {
+        await m.delete().catch(() => {});
+        deleted += 1;
+      }
+      beforeId = fetched.last().id;
+      if (fetched.size < 100) break;
+    }
+    await interaction.followUp({ content: `🧹 Deleted ${deleted} message${deleted === 1 ? '' : 's'}.`, ephemeral: true });
+    return;
+  }
+
+  if (interaction.customId === 'clear_cancel') {
+    await interaction.update({ content: 'Cancelled — nothing was deleted.', components: [] });
     return;
   }
 
@@ -244,6 +278,28 @@ client.on('messageCreate', async (message) => {
       return `• ${chore.name} (${chore.day} ${formatTimeHHMM(chore.time)}) — ${dueStr} — ${status}`;
     });
     await message.reply(lines.join('\n'));
+  } else if (content === '!test') {
+    const chore = CONFIG.chores[Math.floor(Math.random() * CONFIG.chores.length)];
+    await sendTestReminder(chore).catch((err) => {
+      console.error('Failed to send test reminder:', err);
+      return message.reply('Failed to send the test reminder.');
+    });
+    await message.reply(`Sent a test reminder for "${chore.name}".`);
+  } else if (content === '!clear') {
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('clear_confirm')
+        .setLabel('🗑️ Yes, delete all')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('clear_cancel')
+        .setLabel('Cancel')
+        .setStyle(ButtonStyle.Secondary),
+    );
+    await message.reply({
+      content: 'Are you sure? This will delete every message I\'ve sent in this DM.',
+      components: [row],
+    });
   }
 });
 
