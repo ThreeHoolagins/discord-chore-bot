@@ -1,0 +1,24 @@
+{
+  "name": "discord-chore-bot",
+  "version": "1.0.0",
+  "description": "A Discord bot that DMs scheduled chore reminders with done/snooze buttons",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "chore",
+    "reminder"
+  ],
+  "author": "Caleb Cunningham",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2",
+    "node-cron": "^4.6.0"
+  }
+}
