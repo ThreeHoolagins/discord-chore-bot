@@ -165,7 +165,17 @@ async function sendReminder(chore, key) {
 
 async function sendTestReminder(chore) {
   const user = await client.users.fetch(process.env.USER_ID);
-  await user.send({ content: `🧪 Test reminder — ${chore.message}`, components: [buildReminderRow(chore)] });
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`test_${chore.id}_done`)
+      .setLabel('✅ Done')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId(`test_${chore.id}_snooze`)
+      .setLabel('❌ Not yet')
+      .setStyle(ButtonStyle.Danger),
+  );
+  await user.send({ content: `🧪 Test reminder — ${chore.message}`, components: [row] });
 }
 
 function tick() {
@@ -219,6 +229,15 @@ client.on('interactionCreate', async (interaction) => {
 
   if (interaction.customId === 'clear_cancel') {
     await interaction.update({ content: 'Cancelled — nothing was deleted.', components: [] });
+    return;
+  }
+
+  const test = /^test_(.+)_(done|snooze)$/.exec(interaction.customId);
+  if (test) {
+    await interaction.update({
+      content: `✨ Action successfully clicked — this was just a test, nothing was actually changed!`,
+      components: [],
+    });
     return;
   }
 

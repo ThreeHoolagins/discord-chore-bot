@@ -150,7 +150,7 @@ Each chore entry:
 |---|---|
 | `!check` | Run the scheduler once immediately (handy for testing) |
 | `!status` | Show each chore's next/overdue time and current state |
-| `!test` | Send a reminder for a random chore (prefixed with 🧪 so you know it's a test) |
+| `!test` | Send a reminder for a random chore (prefixed with 🧪). Its buttons are **dummy** — clicking them just says "Action successfully clicked" and changes nothing |
 | `!clear` | Delete every message the bot has sent in this DM (asks for confirmation first) |
 
 ## Troubleshooting
