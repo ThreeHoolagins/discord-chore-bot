@@ -85,6 +85,19 @@ function choreTimeThisWeek(chore) {
   return new Date(zonedToEpoch(sp.year, sp.month, sp.day + (dayIdx - 1), hh, mi));
 }
 
+// 12-hour timestamp like "Tue 8/4/2026, 10:00 AM" (in the bot's configured timezone)
+function formatTimestamp(date) {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: CONFIG.timezone,
+    weekday: 'short',
+    month: 'numeric',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+}
+
 function isQuietHours(date) {
   const p = tzPartsOfEpoch(date);
   const mins = p.hour * 60 + p.minute;
@@ -217,9 +230,9 @@ client.on('messageCreate', async (message) => {
       const occ = state.occurrences[key];
       let status = occ && occ.done ? 'done ✅' : 'pending';
       if (!occ) status = 'not started';
-      else if (occ.snoozedUntil && new Date(occ.snoozedUntil) > new Date()) status = `snoozed until ${new Date(occ.snoozedUntil).toLocaleString()}`;
+      else if (occ.snoozedUntil && new Date(occ.snoozedUntil) > new Date()) status = `snoozed until ${formatTimestamp(new Date(occ.snoozedUntil))}`;
       const due = choreTimeThisWeek(chore);
-      const dueStr = due < new Date() ? 'past due' : due.toLocaleString();
+      const dueStr = due < new Date() ? 'past due' : formatTimestamp(due);
       return `• ${chore.name} (${chore.day} ${chore.time}) — ${dueStr} — ${status}`;
     });
     await message.reply(lines.join('\n'));
